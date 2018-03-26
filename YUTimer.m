@@ -23,9 +23,11 @@
     uint64_t interval = (uint64_t)(timeNum * NSEC_PER_SEC);
     dispatch_source_set_timer(self.timer, start, interval, 0);
     dispatch_source_set_event_handler(self.timer, ^{
-        if (block) {
-            block(YES);
-        }
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (block) {
+                block(YES);
+            }
+        });
     });
     [self resume];
 }
