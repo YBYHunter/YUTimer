@@ -10,9 +10,11 @@
 
 @interface YUTimer ()
 
-@property (nonatomic,strong) dispatch_source_t timer;
+@property (nonatomic, strong) dispatch_source_t timer;
 
-@property (nonatomic,strong) dispatch_semaphore_t lock;
+@property (nonatomic, strong) dispatch_semaphore_t lock;
+
+@property (nonatomic, assign) BOOL onFire;
 
 @end
 
@@ -36,6 +38,7 @@
     dispatch_semaphore_wait(self.lock, DISPATCH_TIME_FOREVER);
     if (self.timer) {
         dispatch_resume(self.timer);
+        _onFire = YES;
     }
     dispatch_semaphore_signal(self.lock);
 }
@@ -44,6 +47,7 @@
     dispatch_semaphore_wait(self.lock, DISPATCH_TIME_FOREVER);
     if (self.timer) {
         dispatch_suspend(self.timer);
+        _onFire = NO;
     }
     dispatch_semaphore_signal(self.lock);
 }
@@ -58,6 +62,13 @@
 
 
 - (void)dealloc {
+    if (self.timer) {
+        if (_onFire == NO) {
+            dispatch_resume(self.timer);
+        }
+        dispatch_source_cancel(self.timer);
+        self.timer = nil;
+    }
     NSLog(@" ----- dealloc -----------");
 }
 
