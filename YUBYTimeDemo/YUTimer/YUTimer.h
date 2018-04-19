@@ -9,9 +9,6 @@
 #import <Foundation/Foundation.h>
 
 @interface YUTimer : NSObject
-
-
-
 /**
  初始化加开始
 

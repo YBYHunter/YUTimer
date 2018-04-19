@@ -19,6 +19,10 @@
 
 @property (nonatomic, strong) UIButton * stopButton;
 
+@property (nonatomic, strong) UIButton * jumpButton;
+
+@property (nonatomic, strong) UIButton * popButton;
+
 @property (nonatomic, strong) UILabel * timeLabel;
 
 @property (nonatomic, strong) YUTimer * timer;
@@ -38,13 +42,12 @@
     [self.view addSubview:self.resumeButton];
     [self.view addSubview:self.suspendButton];
     [self.view addSubview:self.stopButton];
+    [self.view addSubview:self.jumpButton];
+    [self.view addSubview:self.popButton];
     [self.view addSubview:self.timeLabel];
-    
-//    __weak __typeof(self)weakSelf = self;
-//    [self.timer startTimerWithSpace:1 block:^(BOOL result) {
-//        weakSelf.currentEditStatusTime++;
-//        weakSelf.timeLabel.text = [NSString stringWithFormat:@"%ld",(long)weakSelf.currentEditStatusTime];
-//    }];
+
+    _currentEditStatusTime = 0;
+
 }
 
 - (void)viewDidLayoutSubviews {
@@ -59,14 +62,20 @@
     self.suspendButton.frame = CGRectMake(spaceValue * 3 + buttonWidth * 2, 100, buttonWidth, 44);
     self.stopButton.frame = CGRectMake(spaceValue * 4 + buttonWidth * 3, 100, buttonWidth, 44);
     
+    self.jumpButton.frame = CGRectMake(spaceValue * 2 + buttonWidth, 300, buttonWidth, 44);
+    self.popButton.frame = CGRectMake(spaceValue * 3 + buttonWidth * 2, 300, buttonWidth, 44);
+    
     self.timeLabel.frame = CGRectMake(0, 100 + 64 + 44, screenWidth, self.timeLabel.font.lineHeight);
     self.timeLabel.text = @"0";
 }
 
 - (void)startButtonAction {
-    _currentEditStatusTime = 0;
+    
     __weak __typeof(self)weakSelf = self;
     [self.timer startTimerWithSpace:1 block:^(BOOL result) {
+        if (result) {
+            
+        }
         weakSelf.currentEditStatusTime++;
         weakSelf.timeLabel.text = [NSString stringWithFormat:@"%ld",(long)weakSelf.currentEditStatusTime];
     }];
@@ -81,16 +90,44 @@
 }
 
 - (void)stopButtonAction {
+    _currentEditStatusTime = 0;
     [self.timer stopTimer];
-    [self dismissViewControllerAnimated:YES completion:nil];
 }
 
--(void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+- (void)jumpButtonAction {
     ViewController * next = [[ViewController alloc] init];
     [self presentViewController:next animated:YES completion:nil];
 }
 
+- (void)popButtonAction {
+    [self dismissViewControllerAnimated:YES completion:nil];
+}
+
 #pragma mark - getter
+
+- (UIButton *)popButton {
+    if (_popButton == nil) {
+        _popButton = [[UIButton alloc] init];
+        [_popButton setTitle:@"返回" forState:UIControlStateNormal];
+        [_popButton setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
+        _popButton.layer.borderWidth = 1;
+        _popButton.layer.borderColor = [UIColor blackColor].CGColor;
+        [_popButton addTarget:self action:@selector(popButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _popButton;
+}
+
+- (UIButton *)jumpButton {
+    if (_jumpButton == nil) {
+        _jumpButton = [[UIButton alloc] init];
+        [_jumpButton setTitle:@"进VC" forState:UIControlStateNormal];
+        [_jumpButton setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
+        _jumpButton.layer.borderWidth = 1;
+        _jumpButton.layer.borderColor = [UIColor blackColor].CGColor;
+        [_jumpButton addTarget:self action:@selector(jumpButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _jumpButton;
+}
 
 - (UIButton *)startButton {
     if (_startButton == nil) {
