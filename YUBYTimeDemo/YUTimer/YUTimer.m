@@ -8,6 +8,12 @@
 
 #import "YUTimer.h"
 
+typedef NS_ENUM(NSInteger,YUTimerStatus) {
+    YUTimerStatusIng,       //执行中
+    YUTimerStatusSuspend,   //暂停
+    YUTimerStatusStop,      //关闭
+};
+
 @interface YUTimer ()
 
 @property (nonatomic, strong) dispatch_source_t timer;
@@ -16,11 +22,26 @@
 
 @property (nonatomic, assign) BOOL onFire;
 
+@property (nonatomic, assign) YUTimerStatus timerStatus;
+
 @end
 
 @implementation YUTimer
 
+- (instancetype)init
+{
+    self = [super init];
+    if (self) {
+        _timerStatus = YUTimerStatusStop;
+    }
+    return self;
+}
+
 - (void)startTimerWithSpace:(float)timeNum block:(void(^)(BOOL))block {
+    if (_timerStatus != YUTimerStatusStop) {
+        NSLog(@"%@-start 状态错误%ld", [self class], (long)_timerStatus);
+        return;
+    }
     dispatch_time_t start = dispatch_walltime(NULL, (int64_t)(0.0 * NSEC_PER_SEC));
     uint64_t interval = (uint64_t)(timeNum * NSEC_PER_SEC);
     dispatch_source_set_timer(self.timer, start, interval, 0);
@@ -31,31 +52,50 @@
             }
         });
     });
-    [self resume];
+    [self resumeTime];
 }
 
 - (void)resume {
+    if (_timerStatus != YUTimerStatusSuspend) {
+        NSLog(@"%@-resume 状态错误%ld",[self class],_timerStatus);
+        return;
+    }
+    [self resumeTime];
+}
+
+- (void)resumeTime {
     dispatch_semaphore_wait(self.lock, DISPATCH_TIME_FOREVER);
     if (self.timer) {
         dispatch_resume(self.timer);
         _onFire = YES;
+        _timerStatus = YUTimerStatusIng;
     }
     dispatch_semaphore_signal(self.lock);
 }
 
 - (void)suspend {
+    if (_timerStatus != YUTimerStatusIng) {
+        NSLog(@"%@-suspend 状态错误%ld",[self class],_timerStatus);
+        return;
+    }
     dispatch_semaphore_wait(self.lock, DISPATCH_TIME_FOREVER);
     if (self.timer) {
         dispatch_suspend(self.timer);
         _onFire = NO;
+        _timerStatus = YUTimerStatusSuspend;
     }
     dispatch_semaphore_signal(self.lock);
 }
 
 - (void)stopTimer {
+    if (_timerStatus != YUTimerStatusIng) {
+        NSLog(@"%@-stop 状态错误%ld",[self class],_timerStatus);
+        return;
+    }
     dispatch_semaphore_wait(self.lock, DISPATCH_TIME_FOREVER);
     if (self.timer) {
         dispatch_cancel(self.timer);
+        _timerStatus = YUTimerStatusStop;
     }
     dispatch_semaphore_signal(self.lock);
 }
@@ -67,7 +107,6 @@
             dispatch_resume(self.timer);
         }
         dispatch_source_cancel(self.timer);
-        self.timer = nil;
     }
     NSLog(@" ----- dealloc -----------");
 }
